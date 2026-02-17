@@ -1,0 +1,3 @@
+- Codex要約を生成しました。
+- max_chars_per_item: `240`
+- max_attempts: `5`
