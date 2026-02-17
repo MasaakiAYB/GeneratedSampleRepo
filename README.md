@@ -1,6 +1,6 @@
 # GeneratedSampleRepo
 
-最小構成の API サーバーです。`GET /api/health` を提供します。
+最小構成の API サーバーです。`GET /` で UI、`GET /api/health` でヘルスチェック API を提供します。
 
 ## 起動手順
 
@@ -15,6 +15,20 @@ HOST=127.0.0.1 PORT=8001 python3 app.py
 ```
 
 ## 動作確認
+
+### UI
+
+ブラウザで以下にアクセスしてください。
+
+```text
+http://localhost:8000/
+```
+
+ページ上にタイトル、説明文、`Health API を確認` ボタンが表示されます。
+
+![UI sample](docs/images/ui-sample.png)
+
+### API
 
 ```bash
 curl -i http://localhost:8000/api/health

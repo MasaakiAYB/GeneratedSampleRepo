@@ -3,6 +3,9 @@ import json
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+INDEX_PATH = os.path.join(BASE_DIR, "index.html")
+
 
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -27,6 +30,15 @@ def run_server():
 
 
 def handle_get_request(path):
+    if path == "/":
+        with open(INDEX_PATH, "rb") as f:
+            body = f.read()
+        headers = {
+            "Content-Type": "text/html; charset=utf-8",
+            "Content-Length": str(len(body)),
+        }
+        return 200, headers, body
+
     if path != "/api/health":
         return 404, {}, b""
 
