@@ -1,13 +1,13 @@
-name: エージェント作業依頼
-description: FlowSmith 自律開発用の Issue テンプレート
+name: FlowSmith 自律実行依頼
+description: FlowSmith 自律開発を実行するための Issue テンプレート（agent-task ラベル付与）
 labels:
   - agent-task
 body:
   - type: markdown
     attributes:
       value: |
-        この Issue は FlowSmith による自律開発を前提としたテンプレートです。
-        できるだけ具体的に記載してください。
+        このテンプレートで作成した Issue は `agent-task` ラベルにより FlowSmith の自律実行対象になります。
+        実装条件をできるだけ具体的に記載してください。
 
   - type: textarea
     id: objective

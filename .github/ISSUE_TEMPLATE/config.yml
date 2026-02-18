@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: FlowSmith 実行設定の確認
+    url: https://github.com/MasaakiAYB/FlowSmith
+    about: FlowSmith の dispatch 設定・Secrets・運用手順を確認できます。

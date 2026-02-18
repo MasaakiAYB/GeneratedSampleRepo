@@ -1,0 +1,47 @@
+name: 通常作業依頼（手動）
+description: エージェントを自動起動しない通常Issueテンプレート
+body:
+  - type: markdown
+    attributes:
+      value: |
+        このテンプレートで作成した Issue は FlowSmith を自動起動しません。
+        人間による実装、または手動トリガー運用向けです。
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: 目的
+      description: 何を達成したいか
+      placeholder: 例）検索一覧に並び替え条件を追加する
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景
+      description: なぜ必要か、現状の課題
+      placeholder: 例）現状は日付順固定で、利用者が目的のデータを探しづらい
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: 受け入れ条件
+      description: 完了判定のチェックリスト
+      placeholder: |
+        - [ ] 並び替えUIが表示される
+        - [ ] 指定した順序で一覧が更新される
+        - [ ] 既存機能に回帰がない
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: 補足情報
+      description: 関連資料、関連Issue、設計メモ
+      placeholder: 関連Issue: #12
+    validations:
+      required: false
