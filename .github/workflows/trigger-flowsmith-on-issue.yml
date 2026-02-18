@@ -4,12 +4,18 @@ on:
   issues:
     types:
       - opened
+      - labeled
 
 permissions:
   contents: read
 
 jobs:
   dispatch:
+    if: >-
+      ${{
+        contains(github.event.issue.labels.*.name, 'agent-task') ||
+        contains(github.event.issue.labels.*.name, 'agent/')
+      }}
     runs-on: ubuntu-latest
     env:
       FLOW_SMITH_REPO: ${{ vars.FLOW_SMITH_REPO || 'MasaakiAYB/FlowSmith' }}

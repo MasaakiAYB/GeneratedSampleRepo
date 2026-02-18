@@ -1,6 +1,5 @@
 name: エージェント作業依頼
 description: FlowSmith 自律開発用の Issue テンプレート
-title: "[エージェント作業] "
 labels:
   - agent-task
 body:
