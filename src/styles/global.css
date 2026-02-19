@@ -30,16 +30,6 @@ body {
   background: #ffffff;
 }
 
-.panel-layout {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-}
-
-.current-number-section {
-  flex: 1;
-}
-
 .current-number-label {
   margin: 0 0 8px;
   color: #4b5563;
@@ -49,37 +39,6 @@ body {
   margin: 0 0 12px;
   font-size: 2rem;
   font-weight: 700;
-}
-
-.history-section {
-  width: 260px;
-}
-
-.history-title {
-  margin: 0 0 8px;
-  font-weight: 600;
-}
-
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.history-table th,
-.history-table td {
-  border: 1px solid #d1d5db;
-  padding: 6px 8px;
-  text-align: left;
-}
-
-@media (max-width: 640px) {
-  .panel-layout {
-    flex-direction: column;
-  }
-
-  .history-section {
-    width: 100%;
-  }
 }
 
 button {
