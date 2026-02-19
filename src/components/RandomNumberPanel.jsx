@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const generateRandomNumber = () => (Math.random() * 1000).toFixed(2);
+const generateRandomNumber = () => Math.floor(Math.random() * 1000);
 
 function RandomNumberPanel() {
   const [randomNumber, setRandomNumber] = useState(() => generateRandomNumber());
