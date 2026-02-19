@@ -98,6 +98,8 @@ jobs:
           {
             echo "pr_number=$pr_number"
             echo "issue_number=$issue_number"
+            echo "head_ref=$head_ref"
+            echo "base_ref=$(echo "$pr_json" | jq -r '.base.ref')"
             echo "trigger_reason=$trigger_reason"
             echo "feedback_text<<EOF"
             printf '%s\n' "$feedback_text"
@@ -120,6 +122,8 @@ jobs:
             --arg pr_number "${{ steps.ctx.outputs.pr_number }}" \
             --arg source_repository "${GITHUB_REPOSITORY}" \
             --arg project_id "${FLOW_SMITH_PROJECT_ID}" \
+            --arg branch_name "${{ steps.ctx.outputs.head_ref }}" \
+            --arg base_branch "${{ steps.ctx.outputs.base_ref }}" \
             --arg dispatch_secret "${FLOW_SMITH_DISPATCH_SECRET}" \
             --arg request_id "pr-feedback-${{ github.run_id }}-${{ github.run_attempt }}" \
             --arg trigger_reason "${{ steps.ctx.outputs.trigger_reason }}" \
@@ -130,6 +134,8 @@ jobs:
                 {
                   issue_number: ($issue_number | tonumber),
                   target_repo: $source_repository,
+                  branch_name: $branch_name,
+                  base_branch: $base_branch,
                   feedback_pr_number: ($pr_number | tonumber),
                   feedback_text: (
                     if ($feedback_text | length) > 0
