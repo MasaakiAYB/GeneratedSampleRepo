@@ -24,10 +24,21 @@ body {
 }
 
 .panel {
+  display: flex;
+  gap: 16px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   padding: 16px;
   background: #ffffff;
+}
+
+.panel-current {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-history {
+  width: 240px;
 }
 
 .random-number-label {
@@ -42,6 +53,38 @@ body {
   line-height: 1;
 }
 
+.history-title {
+  margin: 0 0 8px;
+  color: #4b5563;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.history-table th,
+.history-table td {
+  border: 1px solid #d1d5db;
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.history-table tbody tr {
+  height: 28px;
+}
+
 button {
   padding: 8px 12px;
+}
+
+@media (max-width: 640px) {
+  .panel {
+    flex-direction: column;
+  }
+
+  .panel-history {
+    width: 100%;
+  }
 }
