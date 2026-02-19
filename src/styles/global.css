@@ -1,0 +1,35 @@
+:root {
+  font-family: sans-serif;
+  color: #1f2937;
+  background-color: #f9fafb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.page-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.page-description {
+  margin-top: 0;
+  color: #4b5563;
+}
+
+.panel {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+button {
+  padding: 8px 12px;
+}
