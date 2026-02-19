@@ -47,7 +47,7 @@ jobs:
             --arg request_id "issue-${{ github.event.issue.number }}-run-${{ github.run_id }}" \
             --arg dispatch_secret "${FLOW_SMITH_DISPATCH_SECRET:-}" \
             '{
-              event_type: "autonomous-agent-request",
+              event_type: "autonomous-agent-issue-request",
               client_payload: (
                 {
                   issue_number: $issue_number,

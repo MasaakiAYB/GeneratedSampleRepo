@@ -129,7 +129,7 @@ jobs:
             --arg trigger_reason "${{ steps.ctx.outputs.trigger_reason }}" \
             --arg feedback_text "${{ steps.ctx.outputs.feedback_text }}" \
             '{
-              event_type: "autonomous-agent-request",
+              event_type: "autonomous-agent-feedback-request",
               client_payload: (
                 {
                   issue_number: ($issue_number | tonumber),
