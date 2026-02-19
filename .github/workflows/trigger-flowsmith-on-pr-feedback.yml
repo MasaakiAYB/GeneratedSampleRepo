@@ -20,12 +20,18 @@ permissions:
   pull-requests: read
   issues: read
 
+concurrency:
+  group: pr-feedback-${{ github.repository }}-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   dispatch:
     runs-on: ubuntu-latest
     env:
       FLOW_SMITH_REPO: ${{ vars.FLOW_SMITH_REPO || 'MasaakiAYB/FlowSmith' }}
       FLOW_SMITH_PROJECT_ID: ${{ vars.FLOW_SMITH_PROJECT_ID || '' }}
+      FEEDBACK_TRIGGER_REGEX: ${{ vars.FLOWSMITH_FEEDBACK_TRIGGER_REGEX || '(^|[[:space:]])/(agent|flowsmith)[[:space:]]+(run|fix)([[:space:]]|$)' }}
+      FEEDBACK_ALLOWED_ASSOCIATIONS: ${{ vars.FLOWSMITH_FEEDBACK_ALLOWED_ASSOCIATIONS || 'OWNER,MEMBER,COLLABORATOR' }}
     steps:
       - name: Validate dispatch token
         run: |
@@ -45,6 +51,8 @@ jobs:
           pr_number=""
           feedback_text=""
           trigger_reason=""
+          source_actor=""
+          author_association=""
 
           if [ "$event_name" = "pull_request_review" ]; then
             state="$(jq -r '.review.state // ""' "$GITHUB_EVENT_PATH")"
@@ -55,6 +63,8 @@ jobs:
             pr_number="$(jq -r '.pull_request.number // "" | tostring' "$GITHUB_EVENT_PATH")"
             trigger_reason="review:${state}"
             feedback_text="$(jq -r '.review.body // ""' "$GITHUB_EVENT_PATH")"
+            source_actor="$(jq -r '.review.user.login // ""' "$GITHUB_EVENT_PATH")"
+            author_association="$(jq -r '.review.author_association // ""' "$GITHUB_EVENT_PATH" | tr '[:lower:]' '[:upper:]')"
           elif [ "$event_name" = "pull_request_review_comment" ]; then
             commenter="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
             if echo "$commenter" | grep -Eq '\[bot\]$'; then
@@ -64,6 +74,8 @@ jobs:
             pr_number="$(jq -r '.pull_request.number // "" | tostring' "$GITHUB_EVENT_PATH")"
             trigger_reason="review-comment"
             feedback_text="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
+            source_actor="$commenter"
+            author_association="$(jq -r '.comment.author_association // ""' "$GITHUB_EVENT_PATH" | tr '[:lower:]' '[:upper:]')"
           elif [ "$event_name" = "issue_comment" ]; then
             if [ "$(jq -r 'if (.issue.pull_request.url // "") != "" then "true" else "false" end' "$GITHUB_EVENT_PATH")" != "true" ]; then
               echo "PR以外のIssueコメントは対象外です。"
@@ -77,10 +89,38 @@ jobs:
             pr_number="$(jq -r '.issue.number // "" | tostring' "$GITHUB_EVENT_PATH")"
             trigger_reason="pr-comment"
             feedback_text="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
+            source_actor="$commenter"
+            author_association="$(jq -r '.comment.author_association // ""' "$GITHUB_EVENT_PATH" | tr '[:lower:]' '[:upper:]')"
           else
             echo "Unsupported event: $event_name"
             exit 0
           fi
+
+          # allow trusted reviewers only
+          is_allowed="false"
+          IFS=',' read -r -a allowed_assoc <<< "${FEEDBACK_ALLOWED_ASSOCIATIONS:-OWNER,MEMBER,COLLABORATOR}"
+          for item in "${allowed_assoc[@]}"; do
+            normalized="$(printf '%s' "$item" | xargs | tr '[:lower:]' '[:upper:]')"
+            if [ -n "$normalized" ] && [ "$normalized" = "$author_association" ]; then
+              is_allowed="true"
+              break
+            fi
+          done
+          if [ "$is_allowed" != "true" ]; then
+            echo "許可されていない author_association のためスキップします: actor=${source_actor:-unknown} association=${author_association:-unknown}"
+            exit 0
+          fi
+
+          # explicit command gate: only run when reviewer asks
+          if ! printf '%s\n' "$feedback_text" | grep -Eiq "${FEEDBACK_TRIGGER_REGEX}"; then
+            echo "トリガーコマンドが見つからないためスキップします。"
+            exit 0
+          fi
+
+          # remove command tokens from feedback body before forwarding
+          feedback_text="$(printf '%s\n' "$feedback_text" \
+            | sed -E "s@(^|[[:space:]])/(agent|flowsmith)[[:space:]]+(run|fix)([[:space:]]|$)@ @Ig" \
+            | sed -E 's/[[:space:]]+$//')"
 
           pr_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}")"
           head_ref="$(echo "$pr_json" | jq -r '.head.ref')"
@@ -101,6 +141,8 @@ jobs:
             echo "head_ref=$head_ref"
             echo "base_ref=$(echo "$pr_json" | jq -r '.base.ref')"
             echo "trigger_reason=$trigger_reason"
+            echo "source_actor=$source_actor"
+            echo "author_association=$author_association"
             echo "feedback_text<<EOF"
             printf '%s\n' "$feedback_text"
             echo "EOF"
@@ -169,4 +211,6 @@ jobs:
             echo "- issue_number: \`${{ steps.ctx.outputs.issue_number || '未特定' }}\`"
             echo "- pr_number: \`${{ steps.ctx.outputs.pr_number || '未特定' }}\`"
             echo "- trigger_reason: \`${{ steps.ctx.outputs.trigger_reason || 'none' }}\`"
+            echo "- source_actor: \`${{ steps.ctx.outputs.source_actor || 'unknown' }}\`"
+            echo "- author_association: \`${{ steps.ctx.outputs.author_association || 'unknown' }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
