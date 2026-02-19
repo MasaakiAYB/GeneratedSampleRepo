@@ -27,7 +27,7 @@ function RandomNumberPanel() {
           <table className="history-table">
             <thead>
               <tr>
-                <th>No</th>
+                <th>番号</th>
                 <th>値</th>
               </tr>
             </thead>
