@@ -33,3 +33,15 @@ body {
 button {
   padding: 8px 12px;
 }
+
+.random-number-label {
+  margin: 0;
+  color: #4b5563;
+}
+
+.random-number-value {
+  margin: 8px 0 16px;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
