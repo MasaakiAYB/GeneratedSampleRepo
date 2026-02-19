@@ -1,9 +1,19 @@
+import { useState } from 'react';
+
+const generateRandomInteger = () => Math.floor(Math.random() * 1000);
+
 function RandomNumberPanel() {
+  const [randomNumber, setRandomNumber] = useState(() => generateRandomInteger());
+
+  const handleGenerateClick = () => {
+    setRandomNumber(generateRandomInteger());
+  };
+
   return (
     <section className="panel">
-      <p>ランダム数値UIは Issue #9 で実装予定です。</p>
-      <button type="button" disabled>
-        更新
+      <p>現在のランダム数値: {randomNumber}</p>
+      <button type="button" onClick={handleGenerateClick}>
+        ランダム生成
       </button>
     </section>
   );
