@@ -1,5 +1,6 @@
 name: 通常作業依頼（手動）
-description: エージェントを自動起動しない通常Issueテンプレート
+description: エージェントを自動起動しない通常 Issue テンプレート
+title: "[manual-task] "
 body:
   - type: markdown
     attributes:

@@ -1,5 +1,6 @@
 name: FlowSmith 自律実行依頼
 description: FlowSmith 自律開発を実行するための Issue テンプレート（agent-task ラベル付与）
+title: "[agent-task] "
 labels:
   - agent-task
 body:
