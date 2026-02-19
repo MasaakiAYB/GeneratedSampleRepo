@@ -1,0 +1,150 @@
+name: Trigger FlowSmith On PR Feedback
+
+on:
+  pull_request_review:
+    types:
+      - submitted
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    env:
+      FLOW_SMITH_REPO: ${{ vars.FLOW_SMITH_REPO || 'MasaakiAYB/FlowSmith' }}
+      FLOW_SMITH_PROJECT_ID: ${{ vars.FLOW_SMITH_PROJECT_ID || '' }}
+    steps:
+      - name: Validate dispatch token
+        run: |
+          if [ -z "${{ secrets.FLOW_SMITH_DISPATCH_TOKEN }}" ]; then
+            echo "Secret FLOW_SMITH_DISPATCH_TOKEN is required." >&2
+            exit 1
+          fi
+
+      - name: Resolve PR context
+        id: ctx
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          event_name="${{ github.event_name }}"
+          pr_number=""
+          feedback_text=""
+          trigger_reason=""
+
+          if [ "$event_name" = "pull_request_review" ]; then
+            state="${{ github.event.review.state }}"
+            if [ "$state" != "changes_requested" ] && [ "$state" != "commented" ]; then
+              echo "changes_requested/commented 以外はスキップします。"
+              exit 0
+            fi
+            pr_number="${{ github.event.pull_request.number }}"
+            trigger_reason="review:${state}"
+            feedback_text="${{ github.event.review.body }}"
+          elif [ "$event_name" = "issue_comment" ]; then
+            if [ "${{ github.event.issue.pull_request.url != '' }}" != "true" ]; then
+              echo "PR以外のIssueコメントは対象外です。"
+              exit 0
+            fi
+            commenter="${{ github.event.comment.user.login }}"
+            if echo "$commenter" | grep -Eq '\[bot\]$'; then
+              echo "botコメントは対象外です。"
+              exit 0
+            fi
+            pr_number="${{ github.event.issue.number }}"
+            trigger_reason="pr-comment"
+            feedback_text="${{ github.event.comment.body }}"
+          else
+            echo "Unsupported event: $event_name"
+            exit 0
+          fi
+
+          pr_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}")"
+          head_ref="$(echo "$pr_json" | jq -r '.head.ref')"
+          body="$(echo "$pr_json" | jq -r '.body // ""')"
+
+          issue_number="$(echo "$head_ref" | sed -n 's|.*issue-\([0-9]\+\).*|\1|p' | head -n 1)"
+          if [ -z "$issue_number" ]; then
+            issue_number="$(printf '%s' "$body" | grep -Eio 'closes #[0-9]+' | head -n 1 | grep -Eo '[0-9]+' || true)"
+          fi
+          if [ -z "$issue_number" ]; then
+            echo "Issue番号を特定できなかったためスキップします。"
+            exit 0
+          fi
+
+          {
+            echo "pr_number=$pr_number"
+            echo "issue_number=$issue_number"
+            echo "trigger_reason=$trigger_reason"
+            echo "feedback_text<<EOF"
+            printf '%s\n' "$feedback_text"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Send repository_dispatch to FlowSmith
+        if: ${{ steps.ctx.outputs.pr_number != '' }}
+        env:
+          FLOW_SMITH_DISPATCH_TOKEN: ${{ secrets.FLOW_SMITH_DISPATCH_TOKEN }}
+          FLOW_SMITH_DISPATCH_SECRET: ${{ secrets.FLOW_SMITH_DISPATCH_SECRET || '' }}
+        run: |
+          set -euo pipefail
+
+          owner="${FLOW_SMITH_REPO%%/*}"
+          repo="${FLOW_SMITH_REPO##*/}"
+
+          payload="$(jq -n \
+            --arg issue_number "${{ steps.ctx.outputs.issue_number }}" \
+            --arg pr_number "${{ steps.ctx.outputs.pr_number }}" \
+            --arg source_repository "${GITHUB_REPOSITORY}" \
+            --arg project_id "${FLOW_SMITH_PROJECT_ID}" \
+            --arg dispatch_secret "${FLOW_SMITH_DISPATCH_SECRET}" \
+            --arg request_id "pr-feedback-${{ github.run_id }}-${{ github.run_attempt }}" \
+            --arg trigger_reason "${{ steps.ctx.outputs.trigger_reason }}" \
+            --arg feedback_text "${{ steps.ctx.outputs.feedback_text }}" \
+            '{
+              event_type: "autonomous-agent-request",
+              client_payload: (
+                {
+                  issue_number: ($issue_number | tonumber),
+                  target_repo: $source_repository,
+                  feedback_pr_number: ($pr_number | tonumber),
+                  feedback_text: (
+                    if ($feedback_text | length) > 0
+                    then ("Triggered by: " + $trigger_reason + "\n\n" + $feedback_text)
+                    else ("Triggered by: " + $trigger_reason)
+                    end
+                  ),
+                  source_repository: $source_repository,
+                  request_id: $request_id,
+                  dispatch_secret: $dispatch_secret
+                } + (if $project_id != "" then {project_id: $project_id} else {} end)
+              )
+            }'
+          )"
+
+          curl -fsSL -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${FLOW_SMITH_DISPATCH_TOKEN}" \
+            "https://api.github.com/repos/${owner}/${repo}/dispatches" \
+            -d "$payload"
+
+      - name: Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## FlowSmith PR Feedback Dispatch"
+            echo ""
+            echo "- flow_smith_repo: \`${FLOW_SMITH_REPO}\`"
+            echo "- flow_smith_project_id: \`${FLOW_SMITH_PROJECT_ID:-未設定}\`"
+            echo "- source_repo: \`${{ github.repository }}\`"
+            echo "- issue_number: \`${{ steps.ctx.outputs.issue_number || '未特定' }}\`"
+            echo "- pr_number: \`${{ steps.ctx.outputs.pr_number || '未特定' }}\`"
+            echo "- trigger_reason: \`${{ steps.ctx.outputs.trigger_reason || 'none' }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
