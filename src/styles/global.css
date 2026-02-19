@@ -33,3 +33,51 @@ body {
 button {
   padding: 8px 12px;
 }
+
+.panel-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.panel-title,
+.history-title {
+  margin-top: 0;
+}
+
+.current-label {
+  margin-bottom: 6px;
+  color: #4b5563;
+}
+
+.current-value {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.history-table th,
+.history-table td {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  text-align: left;
+}
+
+.history-empty {
+  color: #6b7280;
+}
+
+@media (max-width: 700px) {
+  .panel-content {
+    grid-template-columns: 1fr;
+  }
+}

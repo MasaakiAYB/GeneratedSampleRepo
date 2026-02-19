@@ -3,8 +3,8 @@ import RandomNumberPanel from '../components/RandomNumberPanel.jsx';
 function RandomNumberPage() {
   return (
     <main className="page-container">
-      <h1>Random Number</h1>
-      <p className="page-description">Issue #9 の実装対象ページです。</p>
+      <h1>ランダム数値生成ページ</h1>
+      <p className="page-description">ボタンを押すたびにランダムな数値を生成して表示します。</p>
       <RandomNumberPanel />
     </main>
   );
