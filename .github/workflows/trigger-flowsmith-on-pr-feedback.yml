@@ -41,42 +41,42 @@ jobs:
         run: |
           set -euo pipefail
 
-          event_name="${{ github.event_name }}"
+          event_name="${GITHUB_EVENT_NAME}"
           pr_number=""
           feedback_text=""
           trigger_reason=""
 
           if [ "$event_name" = "pull_request_review" ]; then
-            state="${{ github.event.review.state }}"
+            state="$(jq -r '.review.state // ""' "$GITHUB_EVENT_PATH")"
             if [ "$state" != "changes_requested" ] && [ "$state" != "commented" ]; then
               echo "changes_requested/commented 以外はスキップします。"
               exit 0
             fi
-            pr_number="${{ github.event.pull_request.number }}"
+            pr_number="$(jq -r '.pull_request.number // "" | tostring' "$GITHUB_EVENT_PATH")"
             trigger_reason="review:${state}"
-            feedback_text="${{ github.event.review.body }}"
+            feedback_text="$(jq -r '.review.body // ""' "$GITHUB_EVENT_PATH")"
           elif [ "$event_name" = "pull_request_review_comment" ]; then
-            commenter="${{ github.event.comment.user.login }}"
+            commenter="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
             if echo "$commenter" | grep -Eq '\[bot\]$'; then
               echo "botコメントは対象外です。"
               exit 0
             fi
-            pr_number="${{ github.event.pull_request.number }}"
+            pr_number="$(jq -r '.pull_request.number // "" | tostring' "$GITHUB_EVENT_PATH")"
             trigger_reason="review-comment"
-            feedback_text="${{ github.event.comment.body }}"
+            feedback_text="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
           elif [ "$event_name" = "issue_comment" ]; then
-            if [ "${{ github.event.issue.pull_request.url != '' }}" != "true" ]; then
+            if [ "$(jq -r 'if (.issue.pull_request.url // "") != "" then "true" else "false" end' "$GITHUB_EVENT_PATH")" != "true" ]; then
               echo "PR以外のIssueコメントは対象外です。"
               exit 0
             fi
-            commenter="${{ github.event.comment.user.login }}"
+            commenter="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
             if echo "$commenter" | grep -Eq '\[bot\]$'; then
               echo "botコメントは対象外です。"
               exit 0
             fi
-            pr_number="${{ github.event.issue.number }}"
+            pr_number="$(jq -r '.issue.number // "" | tostring' "$GITHUB_EVENT_PATH")"
             trigger_reason="pr-comment"
-            feedback_text="${{ github.event.comment.body }}"
+            feedback_text="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
           else
             echo "Unsupported event: $event_name"
             exit 0
